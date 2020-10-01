@@ -3,56 +3,69 @@
 from scholarly import scholarly, ProxyGenerator
 import getopt
 import sys
-from random import randint
-from time import sleep
 import subprocess
 import csv
+from random import randint
+from time import sleep
+import datetime
+
+import translateURLs
 
 dry = False
 start_year = 0
-last_year = 0
+fin_year = datetime.datetime.now().year
 http_proxy = None
 https_proxy = None
+library = ''
+current_pub = []
 publications_found = []
 
 # TODO: use input file with strings to search
 
 
 def usage():
-    print('Usage:  python3 paperworm [options] search_string')
+    print('Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
     print('  Options:')
     print('\t -h, --help        Print this text')
     print('\t -T        Search in title')
     print('\t --dry        Dry run without downloading found publications')
-    print('\t --from YYYY        Start year to consider on the query (eg. 2010)')
-    print('\t --to YYYY        Last year to consider on the query (eg. 2019)')
-    print('\t --lib library_url        Specific library to perform the search (eg. ieee.org)')
-    print('\t --http_proxy addr:port   Proxy to be used for HTTP')
-    print('\t --https_proxy addr:port   Proxy to be used for HTTPS')
+    print('\t --from <YYYY>        Start year to consider on the query (eg. 2010)')
+    print('\t --to <YYYY>        Last year to consider on the query (eg. 2019)')
+    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
+    print('\t --http_proxy <addr:port>   Proxy to be used for HTTP')
+    print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
 
 
 def do_search(search_string):
+    global current_pub
+
     if http_proxy or https_proxy:
-        print("Using HTTP proxy: " + http_proxy)
-        print("Using HTTPS proxy: " + https_proxy)
+        print("\n--Using HTTP proxy: " + http_proxy)
+        print("--Using HTTPS proxy: " + https_proxy)
         set_proxy()
 
-    print("Using search string: " + search_string)
+    print("\n--Using search string: \n" + search_string)
 
     search_query = scholarly.search_pubs(search_string)
     # Iterate through retrieved publications
     end = False
     while not end:
         pub = next(search_query, None)
+        current_pub = []
         if pub:
             if pass_filter(pub):
-                publications_found.append((pub.bib['title'], pub.bib['url']))
-                if not dry:
-                    download_papers(pub.bib['url'])
+                current_pub.append(library)
+                current_pub.append(pub.bib['year'])
+
+                download_paper(pub.bib['url'])
+
+                current_pub.append(pub.bib['title'])
+                publications_found.append(current_pub)
         else:
             end = True
 
-    print('{} Publications found'.format(len(publications_found)))
+    print('\n{} publications found'.format(len(publications_found)))
+
 
 def set_proxy():
     pg = ProxyGenerator()
@@ -63,8 +76,7 @@ def set_proxy():
 def parse_opts(opts, args):
     search_string = ""
     in_title = False
-    library = None
-    global dry, start_year, last_year, http_proxy, https_proxy
+    global dry, start_year, fin_year, http_proxy, https_proxy, library
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -75,9 +87,9 @@ def parse_opts(opts, args):
         elif o == "--dry":
             dry = True
         elif o == "--from":
-            start_year = a
+            start_year = int(a)
         elif o == "--to":
-            last_year = a
+            fin_year = int(a)
         elif o == "--lib":
             library = a
         elif o == "--http_proxy":
@@ -92,16 +104,24 @@ def parse_opts(opts, args):
     elif not args:
         raise TypeError("Missing Arguments")
 
-    if last_year < start_year:
+    library = library.lower()
+    if library != 'ieee' and library != 'acm':
+        print("\nMissing library argument --lib <lib_name>")
+        usage()
+        sys.exit()
+
+    if fin_year < start_year:
         raise TypeError("Invalid Argument: \'--to\' year should be bigger than \'--from\' year")
 
+    # Create search string in google scholar format
     if in_title:
         search_string += "allintitle: "
 
     search_string += args[0]
 
     if library:
-        search_string += " +site:" + library
+        print(library)
+        search_string += " +site:" + translateURLs.get_source_site(library)
 
     return search_string
 
@@ -109,7 +129,7 @@ def parse_opts(opts, args):
 def write_result():
     f = open('search_result.csv', 'w')
 
-    first_row = ['Title', 'URL']
+    first_row = ['LIBRARY', 'YEAR', 'PAGES', 'ID', 'TITLE']
 
     with f:
         writer = csv.writer(f)
@@ -119,28 +139,36 @@ def write_result():
             writer.writerow(pub)
 
 
-
-def download_papers(down_url):
-    cmd = 'echo \"Download URL not found\"'
-    options = '--content-disposition -e robots=off --user-agent \"Mozilla\" -A.pdf '
-
-    if down_url:
-        cmd = 'wget ' + options + down_url
-
-    process = subprocess.run(cmd, shell=True, check=True)
-
-    sleep(randint(10, 100))
-
-
 def pass_filter(publication):
     passed = True
 
     if start_year > 0 and int(publication.bib['year']) < start_year:
         passed = False
-    elif last_year > 0 and int(publication.bib['year']) > last_year:
+    elif int(publication.bib['year']) > fin_year:
         passed = False
 
     return passed
+
+
+def download_paper(base_url):
+    cmd = 'echo \"Download URL not found\"'
+    options = '-e robots=off -U "Mozilla" -A.pdf '
+    env_proxy = None
+
+    if http_proxy or https_proxy:
+        env_proxy = {"http_proxy": http_proxy, "https_proxy": https_proxy}
+
+    down_url, paper_id = translateURLs.get_download_url(library, base_url)
+    current_pub.append(paper_id)
+
+    if down_url:
+        cmd = 'wget ' + options + down_url + ' -O ' + paper_id + '.pdf'
+
+    if not dry:
+        process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
+        sleep(randint(10, 100))
+    else:
+        current_pub.append("NA")
 
 
 def main():
@@ -152,6 +180,8 @@ def main():
         sys.exit(2)
     search_str = parse_opts(opts, args)
 
+    if dry:
+        print("\n############## DRY RUN ##################")
     do_search(search_str)
     write_result()
 
@@ -159,5 +189,4 @@ def main():
 
 
 if __name__ == '__main__':
-    #do_search('allintitle: "* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning") +site:ieee.org')
     main()
