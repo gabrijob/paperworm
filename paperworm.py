@@ -27,12 +27,14 @@ publications_found = []
 
 
 def usage():
-    print('Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
+    print(
+        'Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
     print('  Options:')
     print('\t -h, --help        Print this text')
     print('\t -T        Search in title')
     print('\t --dry        Dry run without downloading found publications')
-    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
+    print(
+        '\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
     print('\t --http_proxy <addr:port>   Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
 
@@ -94,13 +96,17 @@ def parse_opts(opts, args):
             http_proxy = a
         elif o == "--https_proxy":
             https_proxy = a
+        elif not o:
+            raise TypeError("Missing Arguments")
+            usage()
+            sys.exit()
         else:
             assert False, "unhandled option"
 
     if len(args) > 1:
         raise TypeError("Too many Arguments")
-    elif not args:
-        raise TypeError("Missing Arguments")
+    #elif not args:
+    #    raise TypeError("Missing Arguments")
 
     library = library.lower()
     if library != 'ieee' and library != 'acm':
@@ -126,7 +132,8 @@ def parse_opts(opts, args):
 def write_result():
     f = open('search_result.csv', 'w')
 
-    first_row = ['LIBRARY', 'YEAR', 'CITATIONS','ID', 'PAGES', 'TITLE', 'ABSTRACT']
+    first_row = ['LIBRARY', 'YEAR', 'CITATIONS',
+                 'ID', 'PAGES', 'TITLE', 'ABSTRACT']
 
     with f:
         writer = csv.writer(f)
@@ -160,9 +167,11 @@ def download_paper(base_url):
         current_pub.append("NA")
         return True
 
+
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hT", ["help", "dry", "from=", "to=", "lib=", "http_proxy=", "https_proxy="])
+        opts, args = getopt.getopt(sys.argv[1:], "hT", [
+                                   "help", "dry", "from=", "to=", "lib=", "http_proxy=", "https_proxy="])
     except getopt.GetoptError as err:
         print(err)
         usage()
