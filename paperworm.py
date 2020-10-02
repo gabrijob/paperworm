@@ -35,8 +35,11 @@ def usage():
     print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
-
-
+    print('Examples:')
+    print("$ python3 paperworm.py --http_proxy 127.0.0.1:3128 --https_proxy 127.0.0.1:3128 -T --lib ieee '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
+    print("$ python3 paperworm.py -T --lib acm --dry '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
+    print("$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --https_proxy=127.0.0.1:3128 -T --lib acm '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
+	
 def do_search(search_string):
     global current_pub
 
@@ -83,6 +86,7 @@ def parse_opts(opts, args):
     for o, a in opts:
         if o in ("-h", "--help"):
             usage()
+            example()
             sys.exit()
         elif o == "-T":
             in_title = True
@@ -97,12 +101,13 @@ def parse_opts(opts, args):
         elif not o:
             raise TypeError("Missing Arguments")
             usage()
+            example()
             sys.exit()
         else:
             assert False, "unhandled option"
 
-    if len(args) > 1:
-        raise TypeError("Too many Arguments")
+    #if len(args) > 1:
+     #   raise TypeError("Too many Arguments")
     #elif not args:
     #    raise TypeError("Missing Arguments")
 
