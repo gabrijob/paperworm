@@ -6,6 +6,7 @@ For usage information:
 	$ python3 paperworm.py -h  
 
 Dependencies:
+	$ sudo apt install python3-pip
 	$ pip3 install scholarly
 	$ pip3 install PyPDF2
 
