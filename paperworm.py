@@ -33,6 +33,8 @@ def usage():
     print('\t -T                          Search in title')
     print('\t --dry                       Dry run without downloading found publications')
     print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
+    print('Proxy Settings:')
+    print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
     print('Examples:')
@@ -103,6 +105,8 @@ def parse_opts(opts, args):
             sys.exit()
         else:
             assert False, "unhandled option"
+            usage()
+            sys.exit()
 
     #if len(args) > 1:
      #   raise TypeError("Too many Arguments")
