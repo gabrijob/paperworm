@@ -8,20 +8,15 @@
 from scholarly import scholarly, ProxyGenerator
 import getopt
 import sys
-import os
 import subprocess
 import csv
-import PyPDF2
 from random import randint
 from time import sleep
-import datetime
 
+import filters
 import translateURLs
 
 dry = False
-start_year = 0
-fin_year = datetime.datetime.now().year
-min_pgs = 0
 http_proxy = None
 https_proxy = None
 library = ''
@@ -37,9 +32,6 @@ def usage():
     print('\t -h, --help        Print this text')
     print('\t -T        Search in title')
     print('\t --dry        Dry run without downloading found publications')
-    print('\t --from <YYYY>        Start year to consider on the query (eg. 2010)')
-    print('\t --to <YYYY>        Last year to consider on the query (eg. 2019)')
-    print('\t --minpg <min_pages>        Minimum number of pages the paper should have')
     print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
     print('\t --http_proxy <addr:port>   Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
@@ -62,14 +54,15 @@ def do_search(search_string):
         pub = next(search_query, None)
         current_pub = []
         if pub:
-            if pre_filter(pub):
+            if filters.pre_filter(pub):
                 current_pub.append(library)
                 current_pub.append(pub.bib['year'])
+                current_pub.append(pub.bib['cites'])
 
-                download_paper(pub.bib['url'])
-
-                current_pub.append(pub.bib['title'])
-                publications_found.append(current_pub)
+                if download_paper(pub.bib['url']):
+                    current_pub.append(pub.bib['title'])
+                    current_pub.append(pub.bib['abstract'])
+                    publications_found.append(current_pub)
         else:
             end = True
 
@@ -85,7 +78,7 @@ def set_proxy():
 def parse_opts(opts, args):
     search_string = ""
     in_title = False
-    global dry, start_year, fin_year, min_pgs, http_proxy, https_proxy, library
+    global dry, http_proxy, https_proxy, library
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -95,12 +88,6 @@ def parse_opts(opts, args):
             in_title = True
         elif o == "--dry":
             dry = True
-        elif o == "--from":
-            start_year = int(a)
-        elif o == "--to":
-            fin_year = int(a)
-        elif o == "--minpg":
-            min_pgs = int(a)
         elif o == "--lib":
             library = a
         elif o == "--http_proxy":
@@ -121,8 +108,7 @@ def parse_opts(opts, args):
         usage()
         sys.exit()
 
-    if fin_year < start_year:
-        raise TypeError("Invalid Argument: \'--to\' year should be bigger than \'--from\' year")
+    filters.verify_filters()
 
     # Create search string in google scholar format
     if in_title:
@@ -140,7 +126,7 @@ def parse_opts(opts, args):
 def write_result():
     f = open('search_result.csv', 'w')
 
-    first_row = ['LIBRARY', 'YEAR', 'ID', 'PAGES', 'TITLE']
+    first_row = ['LIBRARY', 'YEAR', 'CITATIONS','ID', 'PAGES', 'TITLE', 'ABSTRACT']
 
     with f:
         writer = csv.writer(f)
@@ -148,32 +134,6 @@ def write_result():
 
         for pub in publications_found:
             writer.writerow(pub)
-
-
-def pre_filter(publication):
-    passed = True
-
-    if start_year > 0 and int(publication.bib['year']) < start_year:
-        passed = False
-    elif int(publication.bib['year']) > fin_year:
-        passed = False
-
-    return passed
-
-
-def post_filter(filename):
-    reader = PyPDF2.PdfFileReader(open(filename, 'rb'))
-    nb_pages = reader.getNumPages()
-
-    current_pub.append(nb_pages)
-
-    if nb_pages < min_pgs:
-        os.remove(filename)
-    else:
-        new_filename = '-'.join([str(elem) for elem in current_pub])
-        os.rename(filename, new_filename)
-
-
 
 
 def download_paper(base_url):
@@ -193,11 +153,12 @@ def download_paper(base_url):
 
     if not dry:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
-        post_filter(paper_id + '.pdf')
+        passed = filters.post_filter(paper_id + '.pdf', current_pub)
         sleep(randint(10, 100))
+        return passed
     else:
         current_pub.append("NA")
-
+        return True
 
 def main():
     try:
