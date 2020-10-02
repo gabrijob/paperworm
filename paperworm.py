@@ -115,6 +115,7 @@ def parse_opts(opts, args):
     if library != 'ieee' and library != 'acm':
         print("\nMissing library argument --lib <lib_name>")
         usage()
+        example()
         sys.exit()
 
     filters.verify_filters()
@@ -159,7 +160,6 @@ def download_paper(base_url):
 
     if down_url:
         cmd = 'wget ' + options + down_url + ' -O ' + paper_id + '.pdf'
-        #cmd = 'wget ' + options + down_url + ' -O paper.pdf'
 
     if not dry:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
@@ -178,6 +178,7 @@ def main():
     except getopt.GetoptError as err:
         print(err)
         usage()
+        example()
         sys.exit(2)
     search_str = parse_opts(opts, args)
 
