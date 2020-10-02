@@ -27,15 +27,13 @@ publications_found = []
 
 
 def usage():
-    print(
-        'Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
-    print('  Options:')
-    print('\t -h, --help        Print this text')
-    print('\t -T        Search in title')
-    print('\t --dry        Dry run without downloading found publications')
-    print(
-        '\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
-    print('\t --http_proxy <addr:port>   Proxy to be used for HTTP')
+    print('Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
+    print('Options:')
+    print('\t -h, --help                  Print this text')
+    print('\t -T                          Search in title')
+    print('\t --dry                       Dry run without downloading found publications')
+    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
+    print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
 
 
