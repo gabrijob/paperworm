@@ -1,3 +1,13 @@
+# Authors:
+# gabriel.grabher@inf.ufrgs.br
+# kassianoj@gmail.com
+
+# File with translating functions for source and download URLs from known libraries.
+
+# You can add support for new libraries by writing bellow a "get_<lib_name>_download_url()" and a  "<lib_name>_site()" functions, with its respective entry in the switchers.
+
+
+
 def get_ieee_download_url(url):
     splited_url = url.split('/')
     paper_id = splited_url[-2]
