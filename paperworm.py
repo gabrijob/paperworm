@@ -86,7 +86,6 @@ def parse_opts(opts, args):
     for o, a in opts:
         if o in ("-h", "--help"):
             usage()
-            example()
             sys.exit()
         elif o == "-T":
             in_title = True
@@ -101,7 +100,6 @@ def parse_opts(opts, args):
         elif not o:
             raise TypeError("Missing Arguments")
             usage()
-            example()
             sys.exit()
         else:
             assert False, "unhandled option"
@@ -115,7 +113,6 @@ def parse_opts(opts, args):
     if library != 'ieee' and library != 'acm':
         print("\nMissing library argument --lib <lib_name>")
         usage()
-        example()
         sys.exit()
 
     filters.verify_filters()
@@ -178,7 +175,6 @@ def main():
     except getopt.GetoptError as err:
         print(err)
         usage()
-        example()
         sys.exit(2)
     search_str = parse_opts(opts, args)
 
