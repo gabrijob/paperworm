@@ -23,25 +23,25 @@ library = ''
 current_pub = []
 publications_found = []
 
-# TODO: use input file with strings to search
-
-
 def usage():
-    print('Usage:  python3 paperworm [options] [--lib <lib_name>] <search_string>')
-    print('Options:')
-    print('\t -h, --help                  Print this text')
-    print('\t -T                          Search in title')
-    print('\t --dry                       Dry run without downloading found publications')
-    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
-    print('Proxy Settings:')
+    print('\nUsage:  python3 paperworm [options] [--from <YYYY>] [--lib <lib_name>] <search_string>')
+    print('\nOptions:')
+    print(' -h, --help              Print this text.')
+    print(' --from <YYYY>           Start year to include on the search.')
+    print(' --to <YYYY>             Final year to include on the search. Default: current year.')
+    print(' --minpgs <min>          Minimum number of pages accepted. Default: 1 page.')
+    print(' --dry                   Dry run without downloading found publications')
+    print(' --lib <lib_name>        Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
+    print('\nProxy Settings:')
     print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
-    print('Examples:')
+    print('\nExamples:')
     print("$ python3 paperworm.py --http_proxy 127.0.0.1:3128 --https_proxy 127.0.0.1:3128 -T --lib ieee '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
     print("$ python3 paperworm.py -T --lib acm --dry '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
     print("$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --https_proxy=127.0.0.1:3128 -T --lib acm '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
-	
+
+
 def do_search(search_string):
     global current_pub
 
@@ -98,6 +98,12 @@ def parse_opts(opts, args):
             sys.exit()
         elif o == "-T":
             in_title = True
+        elif o == "--from":
+            filters.set_start_year(a)
+        elif o == "--to":
+            filters.set_final_year(a)
+        elif o == "--minpgs":
+            filters.set_min_pgs(a)
         elif o == "--dry":
             dry = True
         elif o == "--lib":
@@ -106,24 +112,23 @@ def parse_opts(opts, args):
             http_proxy = a
         elif o == "--https_proxy":
             https_proxy = a
-        elif not o:
-            raise TypeError("Missing Arguments")
-            usage()
-            sys.exit()
         else:
-            assert False, "unhandled option"
+            print("Unhandled option" + o + "\n")
             usage()
             sys.exit()
 
-    #if len(args) > 1:
-     #   raise TypeError("Too many Arguments")
-    #elif not args:
-    #    raise TypeError("Missing Arguments")
+    if len(args) > 1:
+        print("\nArgument Error: Too many Arguments.")
+        usage()
+        sys.exit()
+    elif not args:
+        print("\nArgument Error: Missing Arguments.")
+        usage()
+        sys.exit()
 
     library = library.lower()
     if library != 'ieee' and library != 'acm' and library != 'sdirect' and library != 'wiley' and library != 'springer' and library != 'mdpi':
         print("\nMissing library argument --lib <lib_name>")
-        usage()
         sys.exit()
 
     filters.verify_filters()
