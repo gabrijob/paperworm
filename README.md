@@ -12,11 +12,11 @@ Dependencies:
 
 
 Example:
-	$ python3 paperworm.py --http_proxy 127.0.0.1:3128 --https_proxy 127.0.0.1:3128 -T --lib ieee '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
+	$ python3 paperworm.py --https_proxy 127.0.0.1:3128 --from 2015 -T --lib ieee '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
 
-	$ python3 paperworm.py -T --lib acm --dry '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
+	$ python3 paperworm.py -T --from 2015 --lib acm --dry '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
 
-	$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --https_proxy=127.0.0.1:3128 -T --lib acm '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
+	$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --from 2015 -T --lib acm '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
 
 Authors:
  gabriel.grabher@inf.ufrgs.br

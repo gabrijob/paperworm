@@ -8,6 +8,7 @@
 from scholarly import scholarly, ProxyGenerator
 import getopt
 import sys
+import os
 import subprocess
 import csv
 from random import randint
@@ -16,12 +17,17 @@ from time import sleep
 import filters
 import translateURLs
 
+##########################################################################################
+dir = "papers/"
+
 dry = False
 http_proxy = None
 https_proxy = None
 library = ''
 current_pub = []
 publications_found = []
+##########################################################################################
+
 
 def usage():
     print('\nUsage:  python3 paperworm [options] [--from <YYYY>] [--lib <lib_name>] <search_string>')
@@ -37,9 +43,9 @@ def usage():
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
     print('\t --https_proxy <addr:port>   Proxy to be used for HTTPS')
     print('\nExamples:')
-    print("$ python3 paperworm.py --http_proxy 127.0.0.1:3128 --https_proxy 127.0.0.1:3128 -T --lib ieee '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
+    print("$ python3 paperworm.py --http_proxy 127.0.0.1:3128 -T --from 2015 --lib ieee '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
     print("$ python3 paperworm.py -T --lib acm --dry '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
-    print("$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --https_proxy=127.0.0.1:3128 -T --lib acm '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
+    print("$ python3 paperworm.py --https_proxy=127.0.0.1:3128 -T --from 2015 --lib acm '\"* learning\" (\"resource*\" OR \"task*\") (\"management\" OR \"scheduling\" OR \"orchestration\" OR \"provisioning\")'")
 
 
 def do_search(search_string):
@@ -113,7 +119,7 @@ def parse_opts(opts, args):
         elif o == "--https_proxy":
             https_proxy = a
         else:
-            print("Unhandled option" + o + "\n")
+            print("Unhandled option " + o + "\n")
             usage()
             sys.exit()
 
@@ -133,6 +139,11 @@ def parse_opts(opts, args):
 
     filters.verify_filters()
 
+    if http_proxy and not https_proxy:
+        https_proxy = http_proxy
+    elif https_proxy and not http_proxy:
+        http_proxy = https_proxy
+
     # Create search string in google scholar format
     if in_title:
         search_string += "allintitle: "
@@ -147,7 +158,7 @@ def parse_opts(opts, args):
 
 
 def write_result():
-    f = open('search_result.csv', 'w')
+    f = open(dir + 'search_result.csv', 'w')
 
     first_row = ['LIBRARY', 'YEAR', 'CITATIONS',
                  'ID', 'PAGES', 'TITLE', 'ABSTRACT']
@@ -162,7 +173,7 @@ def write_result():
 
 def download_paper(base_url):
     cmd = 'echo \"Download URL not found\"'
-    options = '-e robots=off -U "Mozilla" -A.pdf '
+    options = '-e robots=off -U "Mozilla" -A.pdf'
     env_proxy = None
 
     if http_proxy or https_proxy:
@@ -172,7 +183,7 @@ def download_paper(base_url):
     current_pub.append(paper_id)
 
     if down_url:
-        cmd = 'wget ' + options + down_url + ' -O ' + paper_id + '.pdf'
+        cmd = 'wget ' + options + down_url + ' -O ' + dir + paper_id + '.pdf'
 
     if not dry:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
@@ -193,6 +204,9 @@ def main():
         usage()
         sys.exit(2)
     search_str = parse_opts(opts, args)
+
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 
     if dry:
         print("\n############## DRY RUN ##################")
