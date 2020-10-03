@@ -32,7 +32,7 @@ def usage():
     print('\t -h, --help                  Print this text')
     print('\t -T                          Search in title')
     print('\t --dry                       Dry run without downloading found publications')
-    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm].')
+    print('\t --lib <library_name>        Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
     print('Proxy Settings:')
     print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
@@ -66,7 +66,7 @@ def do_search(search_string):
 
                 if download_paper(pub.bib['url']):
                     current_pub.append(pub.bib['title'])
-                    current_pub.append(pub.bib['abstract'])
+                    if 'abstract' in pub.bib: current_pub.append(pub.bib['abstract'])
                     publications_found.append(current_pub)
         else:
             end = True
@@ -114,7 +114,7 @@ def parse_opts(opts, args):
     #    raise TypeError("Missing Arguments")
 
     library = library.lower()
-    if library != 'ieee' and library != 'acm':
+    if library != 'ieee' and library != 'acm' and library != 'sdirect' and library != 'wiley' and library != 'springer' and library != 'mdpi':
         print("\nMissing library argument --lib <lib_name>")
         usage()
         sys.exit()

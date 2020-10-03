@@ -27,10 +27,48 @@ def get_acm_download_url(url):
     return down_url,paper_id
 
 
+def get_sdirect_download_url(url):
+    splited_url = url.split('/')
+    paper_id = splited_url[-1]
+
+    down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id +' /pdfft"'
+
+    return down_url, paper_id
+
+def get_wiley_download_url(url):
+    splited_url = url.split('/')
+    paper_id = splited_url[-1]
+    section_id = splited_url[-2]
+
+    down_url = '"https://onlinelibrary.wiley.com/doi/pdf/' + section_id + '/' + paper_id + '"'
+
+    return down_url,paper_id
+
+
+def get_springer_download_url(url):
+    splited_url = url.split('/')
+    paper_id = splited_url[-1]
+
+    return url, paper_id
+
+
+def get_mdpi_download_url(url):
+    splited_url = url.split('/')
+    paper_id = splited_url[-1]
+
+    down_url = url + '/pdf'
+
+    return down_url, paper_id
+
+
 def get_download_url(library, base_url):
     switcher = {
         'ieee': get_ieee_download_url,
-        'acm': get_acm_download_url
+        'acm': get_acm_download_url,
+        'sdirect': get_sdirect_download_url,
+        'wiley': get_wiley_download_url,
+        'springer': get_springer_download_url,
+        'mdpi': get_mdpi_download_url
     }
 
     func = switcher.get(library, lambda: "Invalid library")
@@ -62,7 +100,7 @@ def get_source_site(library):
         'sdirect': sciencedirect_site,
         'wiley': wiley_site,
         'springer': springer_site,
-        'madpi': mdpi_site
+        'mdpi': mdpi_site
     }
 
     func = switcher.get(library, lambda: "Invalid library")
