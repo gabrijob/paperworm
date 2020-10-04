@@ -214,7 +214,7 @@ def write_result(filename, dict_data, csv_columns):
 
 def download_paper(base_url):
     cmd = 'echo \"Download URL not found\"'
-    options = '-e robots=off -U "Mozilla" -A.pdf'
+    options = '-e robots=off -U "Mozilla" -A.pdf '
     env_proxy = None
 
     if http_proxy or https_proxy:

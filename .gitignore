@@ -2,3 +2,4 @@ venv
 scholar.log
 .idea
 __pycache__
+papers/
