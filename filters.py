@@ -10,6 +10,10 @@ start_year = None
 fin_year = datetime.datetime.now().year
 min_pgs = 1
 ####################################################################################
+invalid_year_exclusions = 0
+start_year_exclusions = 0
+final_year_exclusions = 0
+min_pgs_exclusions = 0
 
 def verify_filters():
     if not start_year:
@@ -22,26 +26,42 @@ def verify_filters():
 
 
 def pre_filter(publication):
+    global start_year_exclusions, final_year_exclusions, invalid_year_exclusions
     passed = True
 
-    if start_year > 0 and int(publication.bib['year']) < start_year:
+    if publication['YEAR'] == 'NA':
         passed = False
-    elif int(publication.bib['year']) > fin_year:
+        invalid_year_exclusions += 1
+        print('\nPublication "' + publication['TITLE'] + '" removed due to not having a valid publication year.')
+        print('So far ' + str(invalid_year_exclusions) + ' exclusions were made for the same reason.')
+    elif start_year > 0 and int(publication['YEAR']) < start_year:
         passed = False
+        start_year_exclusions += 1
+        print('\nPublication "' + publication['TITLE'] + '" removed for being to old.')
+        print('So far ' + str(start_year_exclusions) + ' exclusions were made for the same reason.')
+    elif int(publication['YEAR']) > fin_year:
+        passed = False
+        final_year_exclusions += 1
+        print('\nPublication "' + publication['TITLE'] + '" removed for being to recent.')
+        print('So far ' + str(final_year_exclusions) + ' exclusions were made for the same reason.')
 
     return passed
 
 
 def post_filter(filename, current_pub):
+    global min_pgs_exclusions
     passed = True
     reader = PyPDF2.PdfFileReader(open(filename, 'rb'))
     nb_pages = reader.getNumPages()
 
-    current_pub.append(nb_pages)
+    current_pub['PAGES'] = nb_pages
 
     if nb_pages < min_pgs:
         os.remove(filename)
         passed = False
+        min_pgs_exclusions += 1
+        print('\nPublication ' + current_pub['ID'] + ' removed for not having enough pages.')
+        print('So far ' + str(min_pgs_exclusions) + ' exclusions were made for the same reason.')
     else:
         new_filename = '-'.join([str(elem) for elem in current_pub])
         os.rename(filename, new_filename)

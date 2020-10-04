@@ -24,8 +24,11 @@ dry = False
 http_proxy = None
 https_proxy = None
 library = ''
-current_pub = []
+search_query = None
+current_pub = {}
 publications_found = []
+publications_pre_filtered = []
+publications_post_filtered = []
 ##########################################################################################
 
 
@@ -49,16 +52,16 @@ def usage():
 
 
 def do_search(search_string):
-    global current_pub
+    global publications_found, current_pub, search_query
 
     if http_proxy or https_proxy:
         print("\n--Using HTTP proxy: " + http_proxy)
         print("--Using HTTPS proxy: " + https_proxy)
         set_proxy()
 
-    print("\n--Using search string: \n" + search_string)
+    print("\nStarting Google Scholar search.")
+    print("--Using search string: \n" + search_string)
 
-    search_query = None
     try:
         search_query = scholarly.search_pubs(search_string)
     except Exception:
@@ -70,21 +73,62 @@ def do_search(search_string):
     end = False
     while not end:
         pub = next(search_query, None)
-        current_pub = []
+        current_pub = {}
         if pub:
-            if filters.pre_filter(pub):
-                current_pub.append(library)
-                current_pub.append(pub.bib['year'])
-                current_pub.append(pub.bib['cites'])
+            current_pub['LIBRARY'] = library
+            current_pub['YEAR'] = pub.bib['year']
+            current_pub['CITATIONS'] = pub.bib['cites']
+            current_pub['URL'] = pub.bib['url']
+            current_pub['TITLE'] = pub.bib['title']
+            if 'abstract' in pub.bib: current_pub['ABSTRACT'] = pub.bib['abstract']
+            else: current_pub['ABSTRACT'] = 'NA'
 
-                if download_paper(pub.bib['url']):
-                    current_pub.append(pub.bib['title'])
-                    if 'abstract' in pub.bib: current_pub.append(pub.bib['abstract'])
-                    publications_found.append(current_pub)
+            publications_found.append(current_pub)
         else:
             end = True
 
     print('\n{} publications found'.format(len(publications_found)))
+    header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE', 'ABSTRACT']
+    csv_filename = 'raw-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+    write_result(csv_filename, publications_found, header)
+
+
+def process_pre_filtered_papers():
+    global current_pub, publications_pre_filtered
+
+    print("\n...Applying pre filters.")
+
+    for pub in publications_found:
+        current_pub = {}
+        if filters.pre_filter(pub):
+            current_pub['LIBRARY'] = pub['LIBRARY']
+            current_pub['YEAR'] = pub['YEAR']
+            current_pub['CITATIONS'] = pub['CITATIONS']
+            current_pub['URL'] = pub['URL']
+            current_pub['TITLE'] = pub['TITLE']
+
+            publications_pre_filtered.append(current_pub)
+
+    header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE']
+    csv_filename = 'pre-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+    write_result(csv_filename, publications_pre_filtered, header)
+
+
+def process_post_filtered_papers():
+    global current_pub, publications_post_filtered
+
+    if not dry:
+        print("\n...Starting files download and applying post filters.")
+
+        for pub in publications_pre_filtered:
+            current_pub = {'LIBRARY': pub['LIBRARY'], 'YEAR': pub['YEAR'], 'CITATIONS': pub['CITATIONS']}
+            if download_paper(pub['URL']):
+                current_pub['TITLE'] = pub['TITLE']
+                publications_post_filtered.append(current_pub)
+
+        header = ['LIBRARY', 'YEAR', 'CITATIONS', 'ID', 'PAGES', 'TITLE']
+        csv_filename = 'post-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+        write_result(csv_filename, publications_post_filtered, header)
 
 
 def set_proxy():
@@ -157,18 +201,15 @@ def parse_opts(opts, args):
     return search_string
 
 
-def write_result():
-    f = open(dir + 'search_result.csv', 'w')
-
-    first_row = ['LIBRARY', 'YEAR', 'CITATIONS',
-                 'ID', 'PAGES', 'TITLE', 'ABSTRACT']
-
-    with f:
-        writer = csv.writer(f)
-        writer.writerow(first_row)
-
-        for pub in publications_found:
-            writer.writerow(pub)
+def write_result(filename, dict_data, csv_columns):
+    try:
+        with open(dir + filename, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for data in dict_data:
+                writer.writerow(data)
+    except IOError:
+        print("I/O error")
 
 
 def download_paper(base_url):
@@ -180,18 +221,19 @@ def download_paper(base_url):
         env_proxy = {"http_proxy": http_proxy, "https_proxy": https_proxy}
 
     down_url, paper_id = translateURLs.get_download_url(library, base_url)
-    current_pub.append(paper_id)
+    current_pub['ID'] = paper_id
 
     if down_url:
         cmd = 'wget ' + options + down_url + ' -O ' + dir + paper_id + '.pdf'
 
+    # TODO: handle subprocess exceptions and create download log/csv
     if not dry:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
         passed = filters.post_filter(paper_id + '.pdf', current_pub)
         sleep(randint(10, 100))
         return passed
     else:
-        current_pub.append("NA")
+        current_pub['PAGES'] = 'NA'
         return True
 
 
@@ -211,7 +253,8 @@ def main():
     if dry:
         print("\n############## DRY RUN ##################")
     do_search(search_str)
-    write_result()
+    process_pre_filtered_papers()
+    process_post_filtered_papers()
 
     return 0
 
