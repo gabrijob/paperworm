@@ -52,7 +52,14 @@ def do_search(search_string):
 
     print("\n--Using search string: \n" + search_string)
 
-    search_query = scholarly.search_pubs(search_string)
+    search_query = None
+    try:
+        search_query = scholarly.search_pubs(search_string)
+    except Exception:
+        print("\nCannot fetch the page from Google Scholar.")
+        print("You may have been blocked by Google Scholar, please check your internet connection.")
+        sys.exit()
+
     # Iterate through retrieved publications
     end = False
     while not end:
