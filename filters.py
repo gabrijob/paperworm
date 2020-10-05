@@ -2,9 +2,12 @@ import datetime
 import os
 import sys
 import PyPDF2
+import logging
 
 
 MAX_POSSIBLE_PAGES = 1000
+DOWNLOAD_LOG_FILE = "download.log"
+DIR = "papers/"
 ####################################################################################
 start_year = None
 fin_year = datetime.datetime.now().year
@@ -50,21 +53,29 @@ def pre_filter(publication):
 
 def post_filter(filename, current_pub):
     global min_pgs_exclusions
+    logging.basicConfig(filename=DOWNLOAD_LOG_FILE, level=logging.DEBUG)
     passed = True
-    reader = PyPDF2.PdfFileReader(open(filename, 'rb'))
-    nb_pages = reader.getNumPages()
+    reader = None
+    filepath = DIR + filename
+    try:
+        reader = PyPDF2.PdfFileReader(open(filepath, 'rb'))
+    except PyPDF2.utils.PdfReadError:
+        logging.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF")
+        os.remove(filepath)
+        return False
 
+    nb_pages = reader.getNumPages()
     current_pub['PAGES'] = nb_pages
 
     if nb_pages < min_pgs:
-        os.remove(filename)
+        os.remove(filepath)
         passed = False
         min_pgs_exclusions += 1
         print('\nPublication ' + current_pub['ID'] + ' removed for not having enough pages.')
         print('So far ' + str(min_pgs_exclusions) + ' exclusions were made for the same reason.')
     else:
-        new_filename = '-'.join([str(elem) for elem in current_pub])
-        os.rename(filename, new_filename)
+        new_filename = current_pub['LIBRARY'] + '-' + str(current_pub['YEAR']) + '-' + str(current_pub['CITATIONS']) + '-' + str(current_pub['ID']) + '-' + str(current_pub['PAGES']) + '.pdf'
+        os.rename(filepath, DIR + new_filename)
 
     return passed
 

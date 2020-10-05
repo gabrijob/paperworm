@@ -13,11 +13,13 @@ import subprocess
 import csv
 from random import randint
 from time import sleep
+import logging
 
 import filters
 import translateURLs
 
 ##########################################################################################
+DOWNLOAD_LOG_FILE = "download.log"
 dir = "papers/"
 
 dry = False
@@ -118,7 +120,7 @@ def process_post_filtered_papers():
     global current_pub, publications_post_filtered
 
     if not dry:
-        print("\n...Starting files download and applying post filters.")
+        print("\n...Starting files download and applying post filters.\n")
 
         for pub in publications_pre_filtered:
             current_pub = {'LIBRARY': pub['LIBRARY'], 'YEAR': pub['YEAR'], 'CITATIONS': pub['CITATIONS']}
@@ -213,6 +215,7 @@ def write_result(filename, dict_data, csv_columns):
 
 
 def download_paper(base_url):
+    logging.basicConfig(filename=DOWNLOAD_LOG_FILE, level=logging.DEBUG)
     cmd = 'echo \"Download URL not found\"'
     options = '-e robots=off -U "Mozilla" -A.pdf '
     env_proxy = None
@@ -225,22 +228,26 @@ def download_paper(base_url):
 
     if down_url:
         cmd = 'wget ' + options + down_url + ' -O ' + dir + paper_id + '.pdf'
+    else:
+        logging.error("[FAILED]: Unable to generate download URL from base URL " + base_url)
+        return False
 
-    # TODO: handle subprocess exceptions and create download log/csv
-    if not dry:
+    try:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
+    except subprocess.CalledProcessError:
+        logging.error("[FAILED]: Unable to download from URL " + down_url)
+        return False
+    finally:
+        logging.info("[OK]: Successful download from URL " + down_url)
         passed = filters.post_filter(paper_id + '.pdf', current_pub)
         sleep(randint(10, 100))
         return passed
-    else:
-        current_pub['PAGES'] = 'NA'
-        return True
 
 
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hT", [
-                                   "help", "dry", "from=", "to=", "lib=", "http_proxy=", "https_proxy="])
+                                   "help", "dry", "from=", "to=", "minpgs=", "lib=", "http_proxy=", "https_proxy="])
     except getopt.GetoptError as err:
         print(err)
         usage()
