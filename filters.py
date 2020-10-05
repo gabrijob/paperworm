@@ -7,6 +7,13 @@ import logging
 
 MAX_POSSIBLE_PAGES = 1000
 DOWNLOAD_LOG_FILE = "download.log"
+# Set up a specific logger with our desired output level
+#logger = logging.getLogger('Download Log')
+#logger.setLevel(logging.INFO)
+# Add the log message handler to the logger
+#handler = logging.FileHandler(DOWNLOAD_LOG_FILE)
+#logger.addHandler(handler)
+
 DIR = "papers/"
 ####################################################################################
 start_year = None
@@ -51,20 +58,20 @@ def pre_filter(publication):
     return passed
 
 
-def post_filter(filename, current_pub):
+def post_filter(filename, current_pub, logger):
     global min_pgs_exclusions
-    logging.basicConfig(filename=DOWNLOAD_LOG_FILE, level=logging.DEBUG)
     passed = True
     reader = None
     filepath = DIR + filename
     try:
         reader = PyPDF2.PdfFileReader(open(filepath, 'rb'))
     except PyPDF2.utils.PdfReadError:
-        logging.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF")
+        logger.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF")
         os.remove(filepath)
         return False
 
     nb_pages = reader.getNumPages()
+
     current_pub['PAGES'] = nb_pages
 
     if nb_pages < min_pgs:

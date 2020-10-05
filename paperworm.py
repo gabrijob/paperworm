@@ -20,6 +20,12 @@ import translateURLs
 
 ##########################################################################################
 DOWNLOAD_LOG_FILE = "download.log"
+# Set up a specific logger with our desired output level
+logger = logging.getLogger('Download Log')
+logger.setLevel(logging.INFO)
+# Add the log message handler to the logger
+handler = logging.FileHandler(DOWNLOAD_LOG_FILE)
+logger.addHandler(handler)
 dir = "papers/"
 
 dry = False
@@ -94,6 +100,7 @@ def do_search(search_string):
     csv_filename = 'raw-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
     write_result(csv_filename, publications_found, header)
 
+    logging.shutdown() # stop scholar.log logging
 
 def process_pre_filtered_papers():
     global current_pub, publications_pre_filtered
@@ -215,7 +222,6 @@ def write_result(filename, dict_data, csv_columns):
 
 
 def download_paper(base_url):
-    logging.basicConfig(filename=DOWNLOAD_LOG_FILE, level=logging.DEBUG)
     cmd = 'echo \"Download URL not found\"'
     options = '-e robots=off -U "Mozilla" -A.pdf '
     env_proxy = None
@@ -229,17 +235,17 @@ def download_paper(base_url):
     if down_url:
         cmd = 'wget ' + options + down_url + ' -O ' + dir + paper_id + '.pdf'
     else:
-        logging.error("[FAILED]: Unable to generate download URL from base URL " + base_url)
+        logger.error("[FAILED]: Unable to generate download URL from base URL " + base_url)
         return False
 
     try:
         process = subprocess.run(cmd, shell=True, check=True, env=env_proxy)
     except subprocess.CalledProcessError:
-        logging.error("[FAILED]: Unable to download from URL " + down_url)
+        logger.error("[FAILED]: Unable to download from URL " + down_url)
         return False
     finally:
-        logging.info("[OK]: Successful download from URL " + down_url)
-        passed = filters.post_filter(paper_id + '.pdf', current_pub)
+        logger.info("[OK]: Successful download from URL " + down_url)
+        passed = filters.post_filter(paper_id + '.pdf', current_pub, logger)
         sleep(randint(10, 100))
         return passed
 

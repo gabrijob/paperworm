@@ -48,8 +48,11 @@ def get_wiley_download_url(url):
 def get_springer_download_url(url):
     splited_url = url.split('/')
     paper_id = splited_url[-1]
+    section_id = splited_url[-2]
 
-    return url, paper_id
+    down_url = '"https://link.springer.com/content/pdf/' + section_id + '/' + paper_id +'.pdf"'
+
+    return down_url, paper_id
 
 
 def get_mdpi_download_url(url):
