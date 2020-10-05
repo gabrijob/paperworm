@@ -31,7 +31,8 @@ dir = "papers/"
 dry = False
 http_proxy = None
 https_proxy = None
-library = ''
+current_lib = ''
+libraries = []
 search_query = None
 current_pub = {}
 publications_found = []
@@ -41,14 +42,14 @@ publications_post_filtered = []
 
 
 def usage():
-    print('\nUsage:  python3 paperworm [options] [--from <YYYY>] [--lib <lib_name>] <search_string>')
+    print('\nUsage:  python3 paperworm [options] [--from <YYYY>] [--lib <lib1,lib2,lib3...>] <search_string>')
     print('\nOptions:')
-    print(' -h, --help              Print this text.')
-    print(' --from <YYYY>           Start year to include on the search.')
-    print(' --to <YYYY>             Final year to include on the search. Default: current year.')
-    print(' --minpgs <min>          Minimum number of pages accepted. Default: 1 page.')
-    print(' --dry                   Dry run without downloading found publications')
-    print(' --lib <lib_name>        Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
+    print(' -h, --help                   Print this text.')
+    print(' --from <YYYY>                Start year to include on the search.')
+    print(' --to <YYYY>                  Final year to include on the search. Default: current year.')
+    print(' --minpgs <min>               Minimum number of pages accepted. Default: 1 page.')
+    print(' --dry                        Dry run without downloading found publications')
+    print(' --lib <lib1,lib2,lib3...>    Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
     print('\nProxy Settings:')
     print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
@@ -61,11 +62,12 @@ def usage():
 
 def do_search(search_string):
     global publications_found, current_pub, search_query
+    publications_found = []
 
     if http_proxy or https_proxy:
         print("\n--Using HTTP proxy: " + http_proxy)
         print("--Using HTTPS proxy: " + https_proxy)
-        set_proxy()
+        #set_proxy()
 
     print("\nStarting Google Scholar search.")
     print("--Using search string: \n" + search_string)
@@ -83,7 +85,7 @@ def do_search(search_string):
         pub = next(search_query, None)
         current_pub = {}
         if pub:
-            current_pub['LIBRARY'] = library
+            current_pub['LIBRARY'] = current_lib
             current_pub['YEAR'] = pub.bib['year']
             current_pub['CITATIONS'] = pub.bib['cites']
             current_pub['URL'] = pub.bib['url']
@@ -97,13 +99,14 @@ def do_search(search_string):
 
     print('\n{} publications found'.format(len(publications_found)))
     header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE', 'ABSTRACT']
-    csv_filename = 'raw-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+    csv_filename = 'raw-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
     write_result(csv_filename, publications_found, header)
 
     logging.shutdown() # stop scholar.log logging
 
 def process_pre_filtered_papers():
     global current_pub, publications_pre_filtered
+    publications_pre_filtered = []
 
     print("\n...Applying pre filters.")
 
@@ -119,12 +122,13 @@ def process_pre_filtered_papers():
             publications_pre_filtered.append(current_pub)
 
     header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE']
-    csv_filename = 'pre-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+    csv_filename = 'pre-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
     write_result(csv_filename, publications_pre_filtered, header)
 
 
 def process_post_filtered_papers():
     global current_pub, publications_post_filtered
+    publications_post_filtered = []
 
     if not dry:
         print("\n...Starting files download and applying post filters.\n")
@@ -136,7 +140,7 @@ def process_post_filtered_papers():
                 publications_post_filtered.append(current_pub)
 
         header = ['LIBRARY', 'YEAR', 'CITATIONS', 'ID', 'PAGES', 'TITLE']
-        csv_filename = 'post-' + library + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
+        csv_filename = 'post-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
         write_result(csv_filename, publications_post_filtered, header)
 
 
@@ -147,9 +151,9 @@ def set_proxy():
 
 
 def parse_opts(opts, args):
-    search_string = ""
+    base_search_string = ""
     in_title = False
-    global dry, http_proxy, https_proxy, library
+    global dry, http_proxy, https_proxy, libraries
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -166,7 +170,7 @@ def parse_opts(opts, args):
         elif o == "--dry":
             dry = True
         elif o == "--lib":
-            library = a
+            libraries = a.split(',')
         elif o == "--http_proxy":
             http_proxy = a
         elif o == "--https_proxy":
@@ -185,10 +189,11 @@ def parse_opts(opts, args):
         usage()
         sys.exit()
 
-    library = library.lower()
-    if library != 'ieee' and library != 'acm' and library != 'sdirect' and library != 'wiley' and library != 'springer' and library != 'mdpi':
-        print("\nMissing library argument --lib <lib_name>")
-        sys.exit()
+    for library in libraries:
+        library.lower()
+        if library != 'ieee' and library != 'acm' and library != 'sdirect' and library != 'wiley' and library != 'springer' and library != 'mdpi':
+            print("\nInvalid library selected.")
+            sys.exit()
 
     filters.verify_filters()
 
@@ -199,15 +204,11 @@ def parse_opts(opts, args):
 
     # Create search string in google scholar format
     if in_title:
-        search_string += "allintitle: "
+        base_search_string += "allintitle: "
 
-    search_string += args[0]
+    base_search_string += args[0]
 
-    if library:
-        print(library)
-        search_string += " +site:" + translateURLs.get_source_site(library)
-
-    return search_string
+    return base_search_string
 
 
 def write_result(filename, dict_data, csv_columns):
@@ -229,7 +230,7 @@ def download_paper(base_url):
     if http_proxy or https_proxy:
         env_proxy = {"http_proxy": http_proxy, "https_proxy": https_proxy}
 
-    down_url, paper_id = translateURLs.get_download_url(library, base_url)
+    down_url, paper_id = translateURLs.get_download_url(current_lib, base_url)
     current_pub['ID'] = paper_id
 
     if down_url:
@@ -251,6 +252,8 @@ def download_paper(base_url):
 
 
 def main():
+    global current_lib
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hT", [
                                    "help", "dry", "from=", "to=", "minpgs=", "lib=", "http_proxy=", "https_proxy="])
@@ -258,16 +261,25 @@ def main():
         print(err)
         usage()
         sys.exit(2)
-    search_str = parse_opts(opts, args)
+    base_search_str = parse_opts(opts, args)
 
     if not os.path.exists(dir):
         os.makedirs(dir)
 
     if dry:
         print("\n############## DRY RUN ##################")
-    do_search(search_str)
-    process_pre_filtered_papers()
-    process_post_filtered_papers()
+
+    for lib in libraries:
+        current_lib = lib
+        search_str = base_search_str +  " +site:" + translateURLs.get_source_site(lib)
+
+        do_search(search_str)
+        process_pre_filtered_papers()
+        process_post_filtered_papers()
+
+        print("\n\n########################### FINISHED ####################")
+        print("Processing for library " + current_lib + " ended. Please wait before the next query can be run...")
+        sleep(randint(120, 180))
 
     return 0
 
