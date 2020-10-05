@@ -16,7 +16,7 @@ Example:
 
 	$ python3 paperworm.py -T --from 2015 --lib acm,mdpi --dry '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning")'
 
-	$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --from 2015 -T --lib all  '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning" OR ''tuning" OR "placement" OR "optimization")'
+	$ python3 paperworm.py --http_proxy=127.0.0.1:3128 --from 2015 -T --lib all  '"* learning" ("resource*" OR "task*") ("management" OR "scheduling" OR "orchestration" OR "provisioning" OR "tuning" OR "placement" OR "optimization")'
 
 
 Authors:
