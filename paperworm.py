@@ -49,7 +49,7 @@ def usage():
     print(' --to <YYYY>                  Final year to include on the search. Default: current year.')
     print(' --minpgs <min>               Minimum number of pages accepted. Default: 1 page.')
     print(' --dry                        Dry run without downloading found publications')
-    print(' --lib <lib1,lib2,lib3...>    Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi].')
+    print(' --lib <lib1,lib2,lib3...>    Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi, all].')
     print('\nProxy Settings:')
     print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
@@ -189,11 +189,14 @@ def parse_opts(opts, args):
         usage()
         sys.exit()
 
-    for library in libraries:
-        library.lower()
-        if library != 'ieee' and library != 'acm' and library != 'sdirect' and library != 'wiley' and library != 'springer' and library != 'mdpi':
+    for lib in libraries:
+        lib.lower()
+        if lib != 'ieee' and lib != 'acm' and lib != 'sdirect' and lib != 'wiley' and lib != 'springer' and lib != 'mdpi' and lib != 'all':
             print("\nInvalid library selected.")
             sys.exit()
+        if lib == 'all':
+            libraries = ['ieee', 'acm', 'sdirect', 'wiley', 'springer', 'mdpi']
+            break
 
     filters.verify_filters()
 
