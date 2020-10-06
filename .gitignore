@@ -1,5 +1,6 @@
 venv
 scholar.log
+geckodriver.log
 .idea
 __pycache__
 papers/

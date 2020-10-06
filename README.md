@@ -1,4 +1,6 @@
 [paperworm]
+"Walk without rhythm and it won't attract the worm."
+
 
 A simple script for downloading publications based on an input search string using Google Scholar.
 

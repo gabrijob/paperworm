@@ -19,6 +19,7 @@ import filters
 import translateURLs
 
 ##########################################################################################
+ALLOW_PROXY_ON_SCHOLAR = False
 DOWNLOAD_LOG_FILE = "download.log"
 # Set up a specific logger with our desired output level
 logger = logging.getLogger('Download Log')
@@ -67,7 +68,7 @@ def do_search(search_string):
     if http_proxy or https_proxy:
         print("\n--Using HTTP proxy: " + http_proxy)
         print("--Using HTTPS proxy: " + https_proxy)
-        #set_proxy()
+        set_proxy()
 
     print("\nStarting Google Scholar search.")
     print("--Using search string: \n" + search_string)
@@ -145,9 +146,10 @@ def process_post_filtered_papers():
 
 
 def set_proxy():
-    pg = ProxyGenerator()
-    pg.SingleProxy(http_proxy, https_proxy)
-    scholarly.use_proxy(pg)
+    if ALLOW_PROXY_ON_SCHOLAR:
+        pg = ProxyGenerator()
+        pg.SingleProxy(http_proxy, https_proxy)
+        scholarly.use_proxy(pg)
 
 
 def parse_opts(opts, args):

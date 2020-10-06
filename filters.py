@@ -64,7 +64,7 @@ def post_filter(filename, current_pub, logger):
     reader = None
     filepath = DIR + filename
     try:
-        reader = PyPDF2.PdfFileReader(open(filepath, 'rb'))
+        reader = PyPDF2.PdfFileReader(open(filepath, 'rb'), strict=False)
     except PyPDF2.utils.PdfReadError:
         logger.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF")
         os.remove(filepath)

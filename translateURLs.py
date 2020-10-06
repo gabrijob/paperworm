@@ -31,7 +31,9 @@ def get_sdirect_download_url(url):
     splited_url = url.split('/')
     paper_id = splited_url[-1]
 
-    down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id +' /pdfft"'
+    #down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id + '/pdfft"'
+    down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id + '/pdfft?isDTMRedir=true&download=true"'
+
 
     return down_url, paper_id
 
