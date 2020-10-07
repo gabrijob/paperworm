@@ -31,9 +31,7 @@ def get_sdirect_download_url(url):
     splited_url = url.split('/')
     paper_id = splited_url[-1]
 
-    #down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id + '/pdfft"'
     down_url = '"https://www.sciencedirect.com/science/article/pii/' + paper_id + '/pdfft?isDTMRedir=true&download=true"'
-
 
     return down_url, paper_id
 
@@ -42,7 +40,7 @@ def get_wiley_download_url(url):
     paper_id = splited_url[-1]
     section_id = splited_url[-2]
 
-    down_url = '"https://onlinelibrary.wiley.com/doi/pdf/' + section_id + '/' + paper_id + '"'
+    down_url = '"https://onlinelibrary.wiley.com/doi/pdfdirect/' + section_id + '/' + paper_id + '?download=true"'
 
     return down_url,paper_id
 

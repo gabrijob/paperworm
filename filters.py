@@ -66,11 +66,21 @@ def post_filter(filename, current_pub, logger):
     try:
         reader = PyPDF2.PdfFileReader(open(filepath, 'rb'), strict=False)
     except PyPDF2.utils.PdfReadError:
-        logger.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF")
+        logger.warning("[FAILED]: The downloaded file for " + current_pub['LIBRARY'] + " " + current_pub['ID'] + " is not a valid PDF.")
         os.remove(filepath)
         return False
 
-    nb_pages = reader.getNumPages()
+    try:
+        nb_pages = reader.getNumPages()
+    except BaseException:
+        #logger.warning("[FAILED]: It seems the downloaded file for " + current_pub['LIBRARY'] + " " + current_pub[
+        #    'ID'] + " was downloaded incorrectly. Check your connection and try downloading it again manually.")
+        #os.remove(filepath)
+        current_pub['PAGES'] = 'NA'
+        new_filename = current_pub['LIBRARY'] + '-' + str(current_pub['YEAR']) + '-' + str(
+            current_pub['CITATIONS']) + '-' + str(current_pub['ID']) + '-' + str(current_pub['PAGES']) + '.pdf'
+        os.rename(filepath, DIR + new_filename)
+        return True
 
     current_pub['PAGES'] = nb_pages
 

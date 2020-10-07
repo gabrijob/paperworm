@@ -190,6 +190,10 @@ def parse_opts(opts, args):
         print("\nArgument Error: Missing Arguments.")
         usage()
         sys.exit()
+    elif len(args[0]) > 200:
+        print("\nArgument Error: Search string too big, it should not be bigger than 200 characters.")
+        usage()
+        sys.exit()
 
     for lib in libraries:
         lib.lower()
@@ -249,11 +253,11 @@ def download_paper(base_url):
     except subprocess.CalledProcessError:
         logger.error("[FAILED]: Unable to download from URL " + down_url)
         return False
-    finally:
-        logger.info("[OK]: Successful download from URL " + down_url)
-        passed = filters.post_filter(paper_id + '.pdf', current_pub, logger)
-        sleep(randint(10, 100))
-        return passed
+
+    logger.info("[OK]: Successful download from URL " + down_url)
+    passed = filters.post_filter(paper_id + '.pdf', current_pub, logger)
+    sleep(randint(10, 100))
+    return passed
 
 
 def main():
