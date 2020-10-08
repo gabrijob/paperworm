@@ -30,6 +30,7 @@ logger.addHandler(handler)
 dir = "papers/"
 
 dry = False
+continuing = False
 http_proxy = None
 https_proxy = None
 current_lib = ''
@@ -45,12 +46,14 @@ publications_post_filtered = []
 def usage():
     print('\nUsage:  python3 paperworm [options] [--from <YYYY>] [--lib <lib1,lib2,lib3...>] <search_string>')
     print('\nOptions:')
-    print(' -h, --help                   Print this text.')
-    print(' --from <YYYY>                Start year to include on the search.')
-    print(' --to <YYYY>                  Final year to include on the search. Default: current year.')
-    print(' --minpgs <min>               Minimum number of pages accepted. Default: 1 page.')
-    print(' --dry                        Dry run without downloading found publications')
-    print(' --lib <lib1,lib2,lib3...>    Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi, all].')
+    print(' -h, --help                                          Print this text.')
+    print(' --from <YYYY>                                       Start year to include on the search.')
+    print(' --to <YYYY>                                         Final year to include on the search. Default: current year.')
+    print(' --minpgs <min>                                      Minimum number of pages accepted. Default: 1 page.')
+    print(' --dry                                               Dry run without downloading found publications')
+    print(' --lib <lib1,lib2,lib3...>                           Specific library to perform the search, possible values [ieee, acm, sdirect, wiley, springer, mdpi, all].')
+    print(' -f, --continue_file <path/pre-filter-file.csv>      CSV file with the pre filter results to be used as input to continue a post filtering process. Ex: papers/pre-acm-2010-2018.csv.')
+    print(' -i, --continue_index <index_num>                    Number of the paper on the pre filter CSV file from which to restart a post filtering process. It can be deduced from the line number on said file.')
     print('\nProxy Settings:')
     print('Obs. Proxy settings allow UFRGS students\' to download papers from many sources. If you have a different case, you need to adapt the code to use the libraries.')
     print('\t --http_proxy <addr:port>    Proxy to be used for HTTP')
@@ -145,6 +148,32 @@ def process_post_filtered_papers():
         write_result(csv_filename, publications_post_filtered, header)
 
 
+def continue_downloading(pre_filtered_csv, continue_index):
+    global publications_pre_filtered, libraries
+    publications_pre_filtered = []
+    libraries = []
+
+    try:
+        with open(pre_filtered_csv, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for index, row in enumerate(reader):
+                if index >= continue_index:
+                    publications_pre_filtered.append(row)
+    except IOError:
+        print("I/O error")
+
+    no_extension_csv_filename = os.path.splitext(pre_filtered_csv)[0].split('/')[1]
+    splited_csv_filename = no_extension_csv_filename.split('-')
+    state = splited_csv_filename[0]
+    libraries.append(splited_csv_filename[1])
+    filters.set_start_year(splited_csv_filename[2])
+    filters.set_final_year(splited_csv_filename[3])
+
+    print("\nContinuing run from file " + pre_filtered_csv)
+    print("With library: " + libraries[0] + " from the year " + str(filters.get_start_year()) + " to " + str(filters.get_final_year()))
+    print("Starting at paper n" + str(continue_index))
+
+
 def set_proxy():
     if ALLOW_PROXY_ON_SCHOLAR:
         pg = ProxyGenerator()
@@ -155,7 +184,9 @@ def set_proxy():
 def parse_opts(opts, args):
     base_search_string = ""
     in_title = False
-    global dry, http_proxy, https_proxy, libraries
+    continue_file = ''
+    continue_index = 0
+    global dry, http_proxy, https_proxy, libraries, continuing
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -177,6 +208,11 @@ def parse_opts(opts, args):
             http_proxy = a
         elif o == "--https_proxy":
             https_proxy = a
+        elif o in ("-f", "--continue_file"):
+            continue_file = a
+            continuing = True
+        elif o in ("-i", "--continue_index"):
+            continue_index = int(a)
         else:
             print("Unhandled option " + o + "\n")
             usage()
@@ -186,14 +222,17 @@ def parse_opts(opts, args):
         print("\nArgument Error: Too many Arguments.")
         usage()
         sys.exit()
-    elif not args:
+    elif not continuing and not args:
         print("\nArgument Error: Missing Arguments.")
         usage()
         sys.exit()
-    elif len(args[0]) > 200:
+    elif not continuing and len(args[0]) > 200:
         print("\nArgument Error: Search string too big, it should not be bigger than 200 characters.")
         usage()
         sys.exit()
+
+    if continuing:
+        continue_downloading(continue_file, continue_index)
 
     for lib in libraries:
         lib.lower()
@@ -215,7 +254,8 @@ def parse_opts(opts, args):
     if in_title:
         base_search_string += "allintitle: "
 
-    base_search_string += args[0]
+    if not continuing:
+        base_search_string += args[0]
 
     return base_search_string
 
@@ -264,8 +304,8 @@ def main():
     global current_lib
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hT", [
-                                   "help", "dry", "from=", "to=", "minpgs=", "lib=", "http_proxy=", "https_proxy="])
+        opts, args = getopt.getopt(sys.argv[1:], "hTf:i:", [
+                                   "help", "dry", "from=", "to=", "minpgs=", "lib=", "http_proxy=", "https_proxy=", "continue_file", "continue_index"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -278,12 +318,16 @@ def main():
     if dry:
         print("\n############## DRY RUN ##################")
 
+    if continuing:
+        print("\n############## CONTINUING RUN ##################")
+
     for lib in libraries:
         current_lib = lib
         search_str = base_search_str +  " +site:" + translateURLs.get_source_site(lib)
 
-        do_search(search_str)
-        process_pre_filtered_papers()
+        if not continuing:
+            do_search(search_str)
+            process_pre_filtered_papers()
         process_post_filtered_papers()
 
         print("\n\n########################### FINISHED ####################")
