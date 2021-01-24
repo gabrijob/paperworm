@@ -85,10 +85,12 @@ def do_search(search_string):
 
     # Iterate through retrieved publications
     end = False
+    order = 1
     while not end:
         pub = next(search_query, None)
         current_pub = {}
         if pub:
+            current_pub['ORDER'] = order
             current_pub['LIBRARY'] = current_lib
             current_pub['YEAR'] = pub.bib['year']
             current_pub['CITATIONS'] = pub.bib['cites']
@@ -98,15 +100,17 @@ def do_search(search_string):
             else: current_pub['ABSTRACT'] = 'NA'
 
             publications_found.append(current_pub)
+            order += 1
         else:
             end = True
 
     print('\n{} publications found'.format(len(publications_found)))
-    header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE', 'ABSTRACT']
+    header = ['ORDER', 'LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE', 'ABSTRACT']
     csv_filename = 'raw-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
     write_result(csv_filename, publications_found, header)
 
     logging.shutdown() # stop scholar.log logging
+
 
 def process_pre_filtered_papers():
     global current_pub, publications_pre_filtered
@@ -117,6 +121,7 @@ def process_pre_filtered_papers():
     for pub in publications_found:
         current_pub = {}
         if filters.pre_filter(pub):
+            current_pub['ORDER'] = pub['ORDER']
             current_pub['LIBRARY'] = pub['LIBRARY']
             current_pub['YEAR'] = pub['YEAR']
             current_pub['CITATIONS'] = pub['CITATIONS']
@@ -125,7 +130,7 @@ def process_pre_filtered_papers():
 
             publications_pre_filtered.append(current_pub)
 
-    header = ['LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE']
+    header = ['ORDER', 'LIBRARY', 'YEAR', 'CITATIONS', 'URL', 'TITLE']
     csv_filename = 'pre-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
     write_result(csv_filename, publications_pre_filtered, header)
 
@@ -138,12 +143,12 @@ def process_post_filtered_papers():
         print("\n...Starting files download and applying post filters.\n")
 
         for pub in publications_pre_filtered:
-            current_pub = {'LIBRARY': pub['LIBRARY'], 'YEAR': pub['YEAR'], 'CITATIONS': pub['CITATIONS']}
+            current_pub = {'ORDER': pub['ORDER'], 'LIBRARY': pub['LIBRARY'], 'YEAR': pub['YEAR'], 'CITATIONS': pub['CITATIONS']}
             if download_paper(pub['URL']):
                 current_pub['TITLE'] = pub['TITLE']
                 publications_post_filtered.append(current_pub)
 
-        header = ['LIBRARY', 'YEAR', 'CITATIONS', 'ID', 'PAGES', 'TITLE']
+        header = ['ORDER', 'LIBRARY', 'YEAR', 'CITATIONS', 'ID', 'PAGES', 'TITLE']
         csv_filename = 'post-' + current_lib + '-' + str(filters.get_start_year()) + '-' + str(filters.get_final_year()) + '.csv'
         write_result(csv_filename, publications_post_filtered, header)
 
