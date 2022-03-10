@@ -92,11 +92,11 @@ def do_search(search_string):
         if pub:
             current_pub['ORDER'] = order
             current_pub['LIBRARY'] = current_lib
-            current_pub['YEAR'] = pub.bib['year']
-            current_pub['CITATIONS'] = pub.bib['cites']
-            current_pub['URL'] = pub.bib['url']
-            current_pub['TITLE'] = pub.bib['title']
-            if 'abstract' in pub.bib: current_pub['ABSTRACT'] = pub.bib['abstract']
+            current_pub['YEAR'] = pub['bib']['pub_year']
+            current_pub['CITATIONS'] = pub['num_citations']
+            current_pub['URL'] = pub['pub_url']
+            current_pub['TITLE'] = pub['bib']['title']
+            if 'abstract' in pub['bib']: current_pub['ABSTRACT'] = pub['bib']['abstract']
             else: current_pub['ABSTRACT'] = 'NA'
 
             publications_found.append(current_pub)
