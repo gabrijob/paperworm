@@ -1,5 +1,27 @@
 [paperworm]
 
+                                  xxxxx
+                            xxxxxx    xxxxxxx
+                       xxxxx         xxxx  xxxx
+                      xx xxx         x  xxxx  xx
+                      x xxxxxxx      xxxx   xxxx
+                      xxx xxxx xxxx            x
+                        xxxxxxxxxxxxxxxxxx     x
+                        x  xxxx xxxxxxx  xxxxxxx
+                        xx    xxxxxxxxxxx
+                         x       xxxxxxx
+                         x        xx
+                         xx        x
+                          xx       x
+     xxxxx                 x       x
+     x   xxxx             xx       xx
+     x      xxx          xx         x
+     xx       xxxxxxxxxxxx         xx
+      xxxx                       xxx
+         xxxxx            xxxxxxxx
+xx           xxxxxxxxxxxxxx   xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 "Walk without rhythm and it won't attract the worm."
 
 
