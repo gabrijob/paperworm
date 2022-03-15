@@ -19,7 +19,7 @@ import filters
 import translateURLs
 
 ##########################################################################################
-ALLOW_PROXY_ON_SCHOLAR = False
+ALLOW_PROXY_ON_SCHOLAR = True
 DOWNLOAD_LOG_FILE = "download.log"
 # Set up a specific logger with our desired output level
 logger = logging.getLogger('Download Log')
@@ -68,10 +68,10 @@ def do_search(search_string):
     global publications_found, current_pub, search_query
     publications_found = []
 
-    if http_proxy or https_proxy:
-        print("\n--Using HTTP proxy: " + http_proxy)
-        print("--Using HTTPS proxy: " + https_proxy)
-        set_proxy()
+    #if http_proxy or https_proxy:
+    #    print("\n--Using HTTP proxy: " + http_proxy)
+    #    print("--Using HTTPS proxy: " + https_proxy)
+    set_proxy()
 
     print("\nStarting Google Scholar search.")
     print("--Using search string: \n" + search_string)
@@ -182,7 +182,16 @@ def continue_downloading(pre_filtered_csv, continue_index):
 def set_proxy():
     if ALLOW_PROXY_ON_SCHOLAR:
         pg = ProxyGenerator()
-        pg.SingleProxy(http_proxy, https_proxy)
+        if http_proxy or https_proxy:
+            print("\n--Using HTTP proxy: " + http_proxy)
+            print("--Using HTTPS proxy: " + https_proxy)
+     
+            pg.SingleProxy(http_proxy, https_proxy)
+        
+        else:
+            print("\n--Using Free Proxies:")
+            pg.FreeProxies()
+
         scholarly.use_proxy(pg)
 
 
